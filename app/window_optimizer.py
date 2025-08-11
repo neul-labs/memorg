@@ -4,7 +4,7 @@ from datetime import datetime
 import re
 from openai import AsyncOpenAI
 import tiktoken
-from models import Exchange, Topic, Conversation, Entity
+from app.models import Exchange, Topic, Conversation, Entity
 import json
 import logging
 
@@ -186,8 +186,9 @@ Please create a coherent summary that preserves these entities and their relatio
         4. Creates a cohesive narrative"""
 
         entity_names = [e.name for e in entities]
+        summaries_text = "\n".join(f"Summary {i+1}:\n{summary}" for i, summary in enumerate(summaries))
         user_prompt = f"""Summaries to combine:
-{chr(10).join(f'Summary {i+1}:\n{summary}' for i, summary in enumerate(summaries))}
+{summaries_text}
 
 Important entities to preserve:
 {', '.join(entity_names)}

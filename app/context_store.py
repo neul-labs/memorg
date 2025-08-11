@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional, Protocol
 import uuid
 import logging
-from models import (
+from app.models import (
     Session, Conversation, Topic, Exchange,
     SearchScope, SearchResult, MatchType, Message, ParsedContent
 )
 from openai import AsyncOpenAI
-from storage.storage_adapter import StorageAdapter
-from vector_store.vector_store import VectorStore
+from app.storage.storage_adapter import StorageAdapter
+from app.vector_store.vector_store import VectorStore
 
 # Configure logger
 logger = logging.getLogger(__name__)

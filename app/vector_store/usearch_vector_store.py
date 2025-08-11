@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 import aiosqlite
 import numpy as np
 from usearch.index import Index
-from vector_store.vector_store import VectorStore
+from .vector_store import VectorStore
 import logging
 
 logger = logging.getLogger(__name__)

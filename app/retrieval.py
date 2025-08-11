@@ -2,7 +2,7 @@ from typing import List, Dict, Any, Optional, Protocol
 from dataclasses import dataclass
 from datetime import datetime
 import math
-from models import Exchange, Topic, Conversation, Entity, SearchResult, MatchType
+from app.models import Exchange, Topic, Conversation, Entity, SearchResult, MatchType
 from openai import AsyncOpenAI
 import tiktoken
 import json

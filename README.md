@@ -13,7 +13,7 @@ Memorg0 is a sophisticated context management system designed to enhance the cap
 ## Specifications
 
 For detailed specifications, please refer to:
-- [Technical Specification](specifications/technial.md) - Core architecture and implementation details
+- [Technical Specification](specifications/technical.md) - Core architecture and implementation details
 - [Usage Guide](specifications/usage.md) - Detailed usage patterns and examples
 - [Analysis](specifications/analysis.md) - System analysis and design decisions
 

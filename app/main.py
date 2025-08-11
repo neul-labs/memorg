@@ -4,25 +4,25 @@ import logging
 from datetime import datetime
 from openai import AsyncOpenAI
 
-from models import (
+from app.models import (
     Session, Conversation, Topic, Exchange,
     Entity, EntityType, SearchScope, SearchResult
 )
-from context_store import ContextStore, StorageAdapter, VectorStore
-from context_manager import (
+from app.context_store import ContextStore, StorageAdapter, VectorStore
+from app.context_manager import (
     ContextManager, RecencyWeightedStrategy,
     ExtractiveSummarization, WorkingMemory
 )
-from retrieval import (
+from app.retrieval import (
     RetrievalSystem, SimpleQueryProcessor,
     MultiFactorScorer
 )
-from window_optimizer import (
+from app.window_optimizer import (
     ContextWindowOptimizer, ProgressiveSummarization,
     TokenOptimizer
 )
-from storage.sqlite_storage import SQLiteStorageAdapter
-from vector_store.usearch_vector_store import USearchVectorStore
+from app.storage.sqlite_storage import SQLiteStorageAdapter
+from app.vector_store.usearch_vector_store import USearchVectorStore
 
 # Configure logging
 logging.basicConfig(
@@ -219,7 +219,7 @@ class MemorgSystem:
                 entities,
                 max_tokens
             )
-            logger.debug("Context optimized, new length: %d", len(optimized))
+            logger.debug("Context optimized, new length: %d", len(optimized.content))
             
             # Create a prompt template from optimized content
             template = self.window_optimizer.create_prompt_template(optimized)
