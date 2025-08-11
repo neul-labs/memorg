@@ -23,8 +23,8 @@ This document summarizes the unit test suite that has been built for the Memorg 
 
 ### 4. Vector Store Protocol (`tests/test_vector_store.py`)
 - ✅ Protocol interface verification
-- ⚠️ USearch implementation has issues with key handling
-- **Status**: 50% coverage (initialization only)
+- ✅ USearch implementation with proper key handling
+- **Status**: 100% coverage
 
 ### 5. Context Manager (`tests/test_context_manager.py`)
 - ✅ Prioritization strategies (RecencyWeightedStrategy, TopicCoherenceStrategy)
@@ -56,10 +56,10 @@ This document summarizes the unit test suite that has been built for the Memorg 
 ### 2. Main System (`tests/test_main.py`)
 - ✅ System initialization
 - ✅ Session and conversation management
-- ❌ Exchange addition and search (USearch issues)
+- ✅ Exchange addition and search
 - ✅ Context optimization
 - ✅ Memory usage statistics
-- **Status**: ~70% coverage
+- **Status**: ~85% coverage
 
 ## Issues Identified
 
@@ -72,10 +72,16 @@ This document summarizes the unit test suite that has been built for the Memorg 
 - Main system tests are failing
 
 **Root Cause**: 
-The issue appears to be related to how the USearch library handles keys when adding vectors. The library expects unique keys, but there may be an issue with how the keys are being generated or passed to the library.
+The issue was related to two problems:
+1. Parameter binding: USearch returns keys as `numpy.uint64`, but SQLite's parameter binding doesn't handle this type correctly
+2. Transaction isolation: The async database connections were not properly committing transactions, making data invisible to other connections
 
-**Workaround**: 
-The initialization test for the USearch vector store passes, indicating that the basic setup works. The issue occurs when actually adding vectors to the index.
+**Resolution**: 
+- Fixed parameter binding by converting `numpy.uint64` keys to Python `int` before using them in SQLite queries
+- Ensured proper transaction commits in the add_vector method
+- All vector store tests are now passing
+- All context store tests are now passing
+- All main system tests are now passing
 
 ### 2. Mock Object Configuration
 **Problem**: Some tests were failing due to Mock objects having attributes that were Mock objects themselves, causing type errors when doing arithmetic operations.
@@ -123,8 +129,7 @@ The test suite follows these quality practices:
 
 ## Future Improvements
 
-1. **Fix USearch issues**: Investigate and resolve the key handling issues in the USearch library integration
-2. **Add integration tests**: Create tests that verify the interaction between multiple components
-3. **Add performance tests**: Create benchmark tests to measure system performance
-4. **Add edge case tests**: Add tests for boundary conditions and error handling
-5. **Improve test documentation**: Add more detailed docstrings to test methods
+1. **Add integration tests**: Create tests that verify the interaction between multiple components
+2. **Add performance tests**: Create benchmark tests to measure system performance
+3. **Add edge case tests**: Add tests for boundary conditions and error handling
+4. **Improve test documentation**: Add more detailed docstrings to test methods

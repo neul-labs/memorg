@@ -14,7 +14,10 @@ class USearchVectorStore(VectorStore):
     def __init__(self, db_path: str = "memorg.db", vector_dim: int = 1536):
         self.db_path = db_path
         self.vector_dim = vector_dim
-        self.index_path = os.path.join(os.path.dirname(db_path), "memorg.usearch")
+        # Use the same name as the db file but with .usearch extension
+        db_name = os.path.basename(db_path)
+        index_name = os.path.splitext(db_name)[0] + ".usearch"
+        self.index_path = os.path.join(os.path.dirname(db_path), index_name)
         self._init_db()
         self._init_usearch()
 
@@ -98,12 +101,15 @@ class USearchVectorStore(VectorStore):
                     await db.execute(
                         """
                         UPDATE vector_metadata 
-                        SET vector_data = ?, metadata = ?, text_content = ?, is_deleted = FALSE
+                        SET vector_data = ?, metadata = ?, text_content = ?, is_deleted = FALSE, updated_at = CURRENT_TIMESTAMP
                         WHERE id = ?
                         """,
                         (vector_bytes, json.dumps(metadata or {}), metadata.get("text_content", "") if metadata else "", numeric_id)
                     )
-                    self.index.update(numeric_id, vector_array)
+                    # Remove the old vector from USearch index and add the new one
+                    # USearch doesn't allow duplicate keys, so we need to remove first
+                    self.index.remove(numeric_id)
+                    self.index.add(numeric_id, vector_array)
                 else:
                     # Insert new vector
                     cursor = await db.execute(
@@ -136,24 +142,27 @@ class USearchVectorStore(VectorStore):
             
             # Filter out deleted items and get metadata
             results = []
-            async with aiosqlite.connect(self.db_path) as db:
+            # Use sync database access as a workaround for async issues
+            with sqlite3.connect(self.db_path) as conn:
                 for match in matches:
+                    # Convert numpy.uint64 to Python int for proper parameter binding
+                    key_as_int = int(match.key)
                     # Check if item is deleted using numeric_id
-                    async with db.execute(
+                    cursor = conn.execute(
                         "SELECT string_id, metadata, text_content FROM vector_metadata WHERE id = ? AND is_deleted = FALSE",
-                        (match.key,)
-                    ) as cursor:
-                        row = await cursor.fetchone()
-                        if row:
-                            string_id, metadata, text_content = row
-                            results.append({
-                                "id": string_id,
-                                "score": float(match.distance),
-                                "metadata": json.loads(metadata),
-                                "text_content": text_content
-                            })
-                            if len(results) >= limit:
-                                break
+                        (key_as_int,)
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        string_id, metadata, text_content = row
+                        results.append({
+                            "id": string_id,
+                            "score": float(match.distance),
+                            "metadata": json.loads(metadata),
+                            "text_content": text_content
+                        })
+                        if len(results) >= limit:
+                            break
             
             logger.info(f"Found {len(results)} nearest vectors")
             return results
