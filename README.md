@@ -1,6 +1,21 @@
-# Memorg0: Hierarchical Context Management System
+# Memorg: Hierarchical Context Management System
 
-Memorg0 is a sophisticated context management system designed to enhance the capabilities of Large Language Models (LLMs) by providing efficient context management, retrieval, and optimization.
+## Why Memorg0?
+
+Large Language Models (LLMs) have revolutionized how we interact with AI, but they face fundamental limitations in managing context over extended conversations or complex workflows. As conversations grow longer or tasks become more intricate, LLMs struggle with:
+
+- **Context Window Limits**: Most LLMs have finite context windows that fill up quickly with lengthy conversations
+- **Information Loss**: Important details from earlier in a conversation can be forgotten as new information is added
+- **Irrelevant Information**: Without intelligent filtering, LLMs process all context equally, leading to inefficiency
+- **Memory Fragmentation**: Related information gets scattered across different parts of a conversation without proper organization
+
+Memorg0 addresses these challenges by providing a sophisticated hierarchical context management system that acts as an external memory layer for LLMs. It intelligently stores, organizes, retrieves, and optimizes contextual information, allowing LLMs to maintain coherent, long-term interactions while staying within token limits.
+
+Think of Memorg0 as a "smart memory manager" for LLMs - it decides what information is important to keep, how to organize it for efficient retrieval, and how to present it optimally to the model.
+
+## What is Memorg0?
+
+Memorg0 is a sophisticated context management system designed to enhance the capabilities of Large Language Models (LLMs) by providing efficient context management, retrieval, and optimization. It serves as an external memory layer that helps LLMs maintain context over extended interactions, manage information hierarchically, and optimize token usage for better performance.
 
 ## Features
 
@@ -10,18 +25,43 @@ Memorg0 is a sophisticated context management system designed to enhance the cap
 - **Context Window Optimization**: Manages token usage and creates optimized prompts
 - **Working Memory Management**: Efficiently allocates and manages token budgets
 
-## Specifications
+[... rest of the README content ...]
 
-For detailed specifications, please refer to:
-- [Technical Specification](specifications/technical.md) - Core architecture and implementation details
-- [Usage Guide](specifications/usage.md) - Detailed usage patterns and examples
-- [Analysis](specifications/analysis.md) - System analysis and design decisions
+## Architecture Overview
 
-## Installation
+Memorg0 follows a modular architecture designed for extensibility and efficiency:
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌────────────────────┐
+│   Main System   │────│  Context Store   │────│   SQLite Storage   │
+└─────────────────┘    └──────────────────┘    └────────────────────┘
+                              │                         │
+                              ▼                         ▼
+                   ┌──────────────────┐    ┌────────────────────┐
+                   │ Vector Store     │    │   USearch Index    │
+                   └──────────────────┘    └────────────────────┘
+                              │
+                              ▼
+                   ┌──────────────────┐
+                   │ OpenAI Client    │
+                   └──────────────────┘
+
+┌─────────────────┐    ┌──────────────────┐    ┌────────────────────┐
+│ Context Manager │    │ Retrieval System │    │ Window Optimizer   │
+└─────────────────┘    └──────────────────┘    └────────────────────┘
+```
+
+- **Context Store**: Manages the hierarchical data structure (Session → Conversation → Topic → Exchange)
+- **Storage Layer**: Uses SQLite for structured data and USearch for vector embeddings
+- **Context Manager**: Handles prioritization, compression, and working memory allocation
+- **Retrieval System**: Provides intelligent search capabilities across different dimensions
+- **Window Optimizer**: Ensures efficient token usage and prompt construction
+
+## Quick Start
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/metamemorg/memorg0.git
+git clone https://github.com/skelf-research/memorg.git
 cd memorg
 ```
 
@@ -34,6 +74,72 @@ poetry install
 ```bash
 export OPENAI_API_KEY="your-api-key-here"
 ```
+
+4. Try the CLI:
+```bash
+poetry run python -m app.cli
+```
+
+5. Or use it as a library in your Python projects:
+```python
+from app.main import MemorgSystem
+from app.storage.sqlite_storage import SQLiteStorageAdapter
+from app.vector_store.usearch_vector_store import USearchVectorStore
+from openai import AsyncOpenAI
+
+# Initialize the system
+storage = SQLiteStorageAdapter("memorg.db")
+vector_store = USearchVectorStore("memorg.db")
+openai_client = AsyncOpenAI()
+system = MemorgSystem(storage, vector_store, openai_client)
+
+# Start using it!
+session = await system.create_session("user123", {"max_tokens": 4096})
+```
+
+## Specifications
+
+For detailed specifications, please refer to:
+- [Technical Specification](specifications/technical.md) - Core architecture and implementation details
+- [Usage Guide](specifications/usage.md) - Detailed usage patterns and examples
+- [Analysis](specifications/analysis.md) - System analysis and design decisions
+
+## Use Cases & Benefits
+
+Memorg0 is particularly valuable for:
+
+### **Long Conversations**
+- Maintain context across extended dialogues without losing important details
+- Automatically prioritize recent and relevant information
+- Prevent context window overflow with intelligent compression
+
+### **Complex Workflows**
+- Track multi-step processes with hierarchical organization
+- Preserve key decisions and parameters throughout a workflow
+- Enable context-aware decision making at each step
+
+### **Research & Analysis**
+- Organize findings and insights by topic and relevance
+- Quickly retrieve relevant information from large datasets
+- Maintain research context across multiple sessions
+
+### **Customer Support**
+- Keep conversation history for personalized service
+- Escalate complex issues with complete context preservation
+- Ensure consistency across support agent interactions
+
+### **Content Creation**
+- Manage research and drafts in organized topics
+- Track content evolution and key revisions
+- Optimize token usage for efficient generation
+
+## Key Benefits
+
+- **Reduced Token Costs**: Intelligent context management minimizes unnecessary token usage
+- **Improved Accuracy**: Relevant context is always available when needed
+- **Better User Experience**: More coherent and contextually appropriate responses
+- **Scalable Memory**: Handle conversations of any length without performance degradation
+- **Extensible Design**: Modular architecture allows for custom components and integrations
 
 ## Library Usage
 
@@ -184,6 +290,12 @@ poetry run mypy .
 4. Push to the branch
 5. Create a Pull Request
 
+## Conclusion
+
+Memorg0 represents a significant step forward in making LLMs more practical for real-world applications that require long-term context management. By providing a robust external memory system, it enables developers to build more sophisticated AI applications that can maintain context over extended interactions while optimizing for performance and cost.
+
+Whether you're building customer support systems, research assistants, content creation tools, or complex workflow automation, Memorg0 provides the foundation for creating more intelligent and context-aware AI applications.
+
 ## Citation
 
 If you use Memorg0 in your research or project, please cite it as follows:
@@ -191,9 +303,9 @@ If you use Memorg0 in your research or project, please cite it as follows:
 ```bibtex
 @software{memorg0,
   author = {Dipankar Sarkar},
-  title = {Memorg0: Hierarchical Context Management System},
+  title = {Memorg: Hierarchical Context Management System},
   year = {2024},
-  url = {https://github.com/metamemorg/memorg0},
+  url = {https://github.com/skelf-research/memorg},
   note = {A sophisticated context management system for enhancing LLM capabilities}
 }
 ```
