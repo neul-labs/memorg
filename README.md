@@ -25,7 +25,6 @@ Memorg0 is a sophisticated context management system designed to enhance the cap
 - **Context Window Optimization**: Manages token usage and creates optimized prompts
 - **Working Memory Management**: Efficiently allocates and manages token budgets
 
-[... rest of the README content ...]
 
 ## Architecture Overview
 
