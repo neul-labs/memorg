@@ -1,6 +1,6 @@
 # Memorg: Hierarchical Context Management System
 
-## Why Memorg0?
+## Why Memorg?
 
 Large Language Models (LLMs) have revolutionized how we interact with AI, but they face fundamental limitations in managing context over extended conversations or complex workflows. As conversations grow longer or tasks become more intricate, LLMs struggle with:
 
@@ -9,13 +9,15 @@ Large Language Models (LLMs) have revolutionized how we interact with AI, but th
 - **Irrelevant Information**: Without intelligent filtering, LLMs process all context equally, leading to inefficiency
 - **Memory Fragmentation**: Related information gets scattered across different parts of a conversation without proper organization
 
-Memorg0 addresses these challenges by providing a sophisticated hierarchical context management system that acts as an external memory layer for LLMs. It intelligently stores, organizes, retrieves, and optimizes contextual information, allowing LLMs to maintain coherent, long-term interactions while staying within token limits.
+Memorg addresses these challenges by providing a sophisticated hierarchical context management system that acts as an external memory layer for LLMs. It intelligently stores, organizes, retrieves, and optimizes contextual information, allowing LLMs to maintain coherent, long-term interactions while staying within token limits.
 
-Think of Memorg0 as a "smart memory manager" for LLMs - it decides what information is important to keep, how to organize it for efficient retrieval, and how to present it optimally to the model.
+Think of Memorg as a "smart memory manager" for LLMs - it decides what information is important to keep, how to organize it for efficient retrieval, and how to present it optimally to the model.
 
-## What is Memorg0?
+## What is Memorg?
 
-Memorg0 is a sophisticated context management system designed to enhance the capabilities of Large Language Models (LLMs) by providing efficient context management, retrieval, and optimization. It serves as an external memory layer that helps LLMs maintain context over extended interactions, manage information hierarchically, and optimize token usage for better performance.
+Memorg is a sophisticated context management system designed to enhance the capabilities of Large Language Models (LLMs) by providing efficient context management, retrieval, and optimization. It serves as an external memory layer that helps LLMs maintain context over extended interactions, manage information hierarchically, and optimize token usage for better performance.
+
+Memorg can be used both as a **Python library** for integration into your applications and as a **command-line interface (CLI)** for standalone use.
 
 ## Features
 
@@ -24,11 +26,11 @@ Memorg0 is a sophisticated context management system designed to enhance the cap
 - **Efficient Retrieval**: Combines keyword, semantic, and temporal search capabilities
 - **Context Window Optimization**: Manages token usage and creates optimized prompts
 - **Working Memory Management**: Efficiently allocates and manages token budgets
-
+- **Dual Interface**: Available as both a Python library and a standalone CLI
 
 ## Architecture Overview
 
-Memorg0 follows a modular architecture designed for extensibility and efficiency:
+Memorg follows a modular architecture designed for extensibility and efficiency:
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌────────────────────┐
@@ -56,30 +58,28 @@ Memorg0 follows a modular architecture designed for extensibility and efficiency
 - **Retrieval System**: Provides intelligent search capabilities across different dimensions
 - **Window Optimizer**: Ensures efficient token usage and prompt construction
 
-## Quick Start
+## Installation
 
-1. Clone the repository:
+Install Memorg using pip:
+
+```bash
+pip install memorg
+```
+
+Or install from source using Poetry:
+
 ```bash
 git clone https://github.com/skelf-research/memorg.git
 cd memorg
-```
-
-2. Install using Poetry:
-```bash
 poetry install
 ```
 
-3. Set up your OpenAI API key:
-```bash
-export OPENAI_API_KEY="your-api-key-here"
-```
+## Quick Start
 
-4. Try the CLI:
-```bash
-poetry run python -m app.cli
-```
+### As a Python Library
 
-5. Or use it as a library in your Python projects:
+Memorg can be easily integrated into your Python projects:
+
 ```python
 from app.main import MemorgSystem
 from app.storage.sqlite_storage import SQLiteStorageAdapter
@@ -96,6 +96,25 @@ system = MemorgSystem(storage, vector_store, openai_client)
 session = await system.create_session("user123", {"max_tokens": 4096})
 ```
 
+### As a Command-Line Interface
+
+Memorg also provides a powerful CLI for standalone use:
+
+1. Set up your OpenAI API key:
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+```
+
+2. Run the CLI:
+```bash
+memorg
+```
+
+Or if installed from source:
+```bash
+poetry run python -m app.cli
+```
+
 ## Specifications
 
 For detailed specifications, please refer to:
@@ -105,7 +124,7 @@ For detailed specifications, please refer to:
 
 ## Use Cases & Benefits
 
-Memorg0 is particularly valuable for:
+Memorg is particularly valuable for:
 
 ### **Long Conversations**
 - Maintain context across extended dialogues without losing important details
@@ -142,7 +161,7 @@ Memorg0 is particularly valuable for:
 
 ## Library Usage
 
-Memorg0 can be used as a library in your Python projects. Here's how to integrate it:
+Memorg can be used as a library in your Python projects. Here's how to integrate it:
 
 ```python
 from app.main import MemorgSystem
@@ -183,13 +202,13 @@ async def setup_memorg():
     return system, session, conversation, topic
 ```
 
-## CLI Exploration
+## CLI Usage
 
 The CLI provides an interactive way to explore and manage your memory system:
 
 ```bash
 # Start the CLI
-poetry run python -m app.cli
+memorg
 ```
 
 Available commands in the CLI:
@@ -201,7 +220,7 @@ Available commands in the CLI:
 
 Example CLI session:
 ```bash
-$ poetry run python -m app.cli
+$ memorg
 Welcome to Memorg CLI Chat!
 Type 'help' for available commands or start chatting.
 
@@ -291,16 +310,16 @@ poetry run mypy .
 
 ## Conclusion
 
-Memorg0 represents a significant step forward in making LLMs more practical for real-world applications that require long-term context management. By providing a robust external memory system, it enables developers to build more sophisticated AI applications that can maintain context over extended interactions while optimizing for performance and cost.
+Memorg represents a significant step forward in making LLMs more practical for real-world applications that require long-term context management. By providing a robust external memory system, it enables developers to build more sophisticated AI applications that can maintain context over extended interactions while optimizing for performance and cost.
 
-Whether you're building customer support systems, research assistants, content creation tools, or complex workflow automation, Memorg0 provides the foundation for creating more intelligent and context-aware AI applications.
+Whether you're building customer support systems, research assistants, content creation tools, or complex workflow automation, Memorg provides the foundation for creating more intelligent and context-aware AI applications.
 
 ## Citation
 
-If you use Memorg0 in your research or project, please cite it as follows:
+If you use Memorg in your research or project, please cite it as follows:
 
 ```bibtex
-@software{memorg0,
+@software{memorg,
   author = {Dipankar Sarkar},
   title = {Memorg: Hierarchical Context Management System},
   year = {2024},
@@ -311,4 +330,4 @@ If you use Memorg0 in your research or project, please cite it as follows:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.

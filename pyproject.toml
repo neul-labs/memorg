@@ -1,9 +1,23 @@
 [tool.poetry]
 name = "memorg"
 version = "0.1.0"
-description = ""
+description = "A hierarchical context management system for Large Language Models that acts as an external memory layer, helping LLMs maintain context over extended interactions while managing token usage efficiently."
 authors = ["Dipankar Sarkar <me@dipankar.name>"]
 readme = "README.md"
+license = "MIT"
+repository = "https://github.com/skelf-research/memorg"
+homepage = "https://github.com/skelf-research/memorg"
+documentation = "https://github.com/skelf-research/memorg"
+keywords = ["llm", "context-management", "memory", "ai", "nlp", "openai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -19,6 +33,9 @@ fastmcp = "^0.1.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 pytest-asyncio = "^0.23.0"
+
+[tool.poetry.scripts]
+memorg = "app.cli_entry:main"
 
 [build-system]
 requires = ["poetry-core"]
