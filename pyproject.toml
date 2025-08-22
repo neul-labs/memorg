@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "memorg"
-version = "0.1.0"
+version = "0.1.1"
 description = "A hierarchical context management system for Large Language Models that acts as an external memory layer, helping LLMs maintain context over extended interactions while managing token usage efficiently."
 authors = ["Dipankar Sarkar <me@dipankar.name>"]
 readme = "README.md"
