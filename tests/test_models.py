@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models import (
     EntityType, SearchScope, MatchType, Entity, ParsedContent, 
     Message, Exchange, Topic, Conversation, Session, SearchResult
@@ -69,8 +69,8 @@ class TestModels:
         
         exchange = Exchange(
             id="test-exchange-1",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             user_message=user_message,
             system_message=system_message,
             importance_score=0.9,
@@ -90,8 +90,8 @@ class TestModels:
         entity = Entity("Test", EntityType.PERSON, 0.5, {})
         topic = Topic(
             id="test-topic-1",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             title="Test Topic",
             summary="Test summary",
             exchanges=[],
@@ -112,8 +112,8 @@ class TestModels:
         """Test Conversation model creation."""
         conversation = Conversation(
             id="test-conversation-1",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             title="Test Conversation",
             summary="Test summary",
             topics=[],
@@ -132,8 +132,8 @@ class TestModels:
         """Test Session model creation."""
         session = Session(
             id="test-session-1",
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             user_id="test-user",
             system_config={"max_tokens": 4096},
             conversations=[],

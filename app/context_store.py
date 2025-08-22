@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Protocol
 import uuid
 import logging
@@ -51,8 +51,8 @@ class ContextStore:
         logger.info(f"Creating new session for user_id={user_id}")
         session = Session(
             id=str(uuid.uuid4()),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             user_id=user_id,
             system_config=config,
             conversations=[],
@@ -96,8 +96,8 @@ class ContextStore:
         logger.info(f"Creating new conversation for session_id={session_id}")
         conversation = Conversation(
             id=str(uuid.uuid4()),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             title="",
             summary="",
             topics=[],
@@ -111,7 +111,7 @@ class ContextStore:
         session = await self.get_session(session_id)
         if session:
             session.conversations.append(conversation)
-            session.updated_at = datetime.utcnow()
+            session.updated_at = datetime.now(timezone.utc)
             await self.storage.write("sessions", session_id, session.__dict__)
             logger.debug(f"Updated session {session_id} with new conversation")
         else:
@@ -154,8 +154,8 @@ class ContextStore:
         logger.info(f"Creating new topic for conversation_id={conversation_id}")
         topic = Topic(
             id=str(uuid.uuid4()),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             title=title or "",
             summary="",
             exchanges=[],
@@ -170,7 +170,7 @@ class ContextStore:
         conversation = await self.get_conversation(conversation_id)
         if conversation:
             conversation.topics.append(topic)
-            conversation.updated_at = datetime.utcnow()
+            conversation.updated_at = datetime.now(timezone.utc)
             await self.storage.write("conversations", conversation_id, conversation.__dict__)
             logger.debug(f"Updated conversation {conversation_id} with new topic")
         else:
@@ -220,8 +220,8 @@ class ContextStore:
         # Create exchange with proper message objects
         exchange = Exchange(
             id=str(uuid.uuid4()),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             user_message=user_msg,
             system_message=system_msg,
             importance_score=0.0,
@@ -237,7 +237,7 @@ class ContextStore:
         topic = await self.get_topic(topic_id)
         if topic:
             topic.exchanges.append(exchange)
-            topic.updated_at = datetime.utcnow()
+            topic.updated_at = datetime.now(timezone.utc)
             await self.storage.write("topics", topic_id, topic.__dict__)
             logger.debug(f"Updated topic {topic_id} with new exchange")
         else:
@@ -343,4 +343,4 @@ class ContextStore:
                         break
         
         logger.info(f"Semantic search completed with {len(results)} results")
-        return results 
+        return results

@@ -1,7 +1,7 @@
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.context_manager import (
     CompressedEntity, AllocationResult, MemoryUsage,
     RecencyWeightedStrategy, TopicCoherenceStrategy,
@@ -25,7 +25,7 @@ class TestRecencyWeightedStrategy:
         # Create a mock exchange with base importance score
         exchange = Mock()
         exchange.importance_score = 1.0
-        exchange.created_at = datetime.utcnow() - timedelta(hours=1)
+        exchange.created_at = datetime.now(timezone.utc) - timedelta(hours=1)
         
         # Calculate importance
         importance = strategy.calculate_importance(exchange, {})
@@ -219,7 +219,7 @@ class TestContextManager:
         # Create a mock exchange
         exchange = Mock()
         exchange.importance_score = 0.8
-        exchange.created_at = datetime.utcnow()
+        exchange.created_at = datetime.now(timezone.utc)
         
         # Update importance
         importance = context_manager.update_importance(exchange, {})

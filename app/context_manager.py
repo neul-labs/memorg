@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Protocol, Optional
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import math
 from openai import AsyncOpenAI
 import tiktoken
@@ -85,7 +85,7 @@ class RecencyWeightedStrategy(PrioritizationStrategy):
         more of their original importance score.
         """
         # Calculate time-based decay
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         time_diff = (now - exchange.created_at).total_seconds()
         time_decay = math.exp(-self.decay_factor * time_diff)
         

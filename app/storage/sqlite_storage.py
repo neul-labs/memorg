@@ -2,7 +2,7 @@ import sqlite3
 import json
 from typing import Dict, Any, List, Optional
 import aiosqlite
-from datetime import datetime
+from datetime import datetime, timezone
 from .storage_adapter import StorageAdapter
 from ..models import Session, Conversation, Topic, Exchange, Entity, SearchResult, Message, ParsedContent
 
@@ -79,7 +79,7 @@ class SQLiteStorageAdapter(StorageAdapter):
         async with aiosqlite.connect(self.db_path) as db:
             # Convert data to JSON string using custom encoder
             data_json = json.dumps(data, cls=DateTimeEncoder)
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             
             # Check if record exists
             async with db.execute(
