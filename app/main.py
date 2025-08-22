@@ -1,4 +1,4 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import asyncio
 import logging
 from datetime import datetime
@@ -23,6 +23,11 @@ from app.window_optimizer import (
 )
 from app.storage.sqlite_storage import SQLiteStorageAdapter
 from app.vector_store.usearch_vector_store import USearchVectorStore
+
+# Import new memory components
+from app.memory.core import MemoryType, MemoryScope
+from app.memory.store import HierarchicalMemoryStore
+from app.memory.manager import GenericMemoryManager
 
 # Configure logging
 logging.basicConfig(
@@ -71,6 +76,11 @@ class MemorgSystem:
             summarization_strategy=ProgressiveSummarization(openai_client),  # Progressive summarization
             token_optimization_strategy=TokenOptimizer(openai_client=openai_client)  # Token management
         )
+        
+        # Initialize new memory components for broader workflow usage
+        self.memory_store = HierarchicalMemoryStore(storage, vector_store, openai_client)
+        self.memory_manager = GenericMemoryManager(self.memory_store, openai_client)
+        
         logger.info("Initialized MemorgSystem with all components")
 
     async def create_session(self, user_id: str, config: Dict[str, Any]) -> Session:
@@ -267,6 +277,110 @@ class MemorgSystem:
                 "index_size": 0
             }
 
+    # New methods for the generic memory abstraction
+    async def create_memory_item(
+        self,
+        content: str,
+        item_type: str,
+        parent_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[List[str]] = None
+    ):
+        """
+        Create a new memory item using the generic memory manager.
+        This method allows for creating memory items outside of chat contexts.
+        """
+        # Convert string item_type to MemoryType enum
+        try:
+            memory_type = MemoryType(item_type)
+        except ValueError:
+            memory_type = MemoryType.CUSTOM
+            if metadata is None:
+                metadata = {}
+            metadata["custom_type"] = item_type
+        
+        return await self.memory_manager.create_item(
+            content=content,
+            item_type=memory_type,
+            parent_id=parent_id,
+            metadata=metadata,
+            tags=tags
+        )
+
+    async def search_memory(
+        self,
+        query: str,
+        scope: str = "global",
+        item_types: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None,
+        limit: int = 10
+    ):
+        """
+        Search memory using the generic memory manager.
+        This method provides a more flexible search interface than the chat-specific search_context.
+        """
+        # Convert string scope to MemoryScope enum
+        try:
+            memory_scope = MemoryScope(scope)
+        except ValueError:
+            memory_scope = MemoryScope.GLOBAL
+        
+        # Convert string item_types to MemoryType enums
+        memory_types = None
+        if item_types:
+            memory_types = []
+            for item_type in item_types:
+                try:
+                    memory_types.append(MemoryType(item_type))
+                except ValueError:
+                    # Skip invalid types
+                    pass
+        
+        return await self.memory_manager.search(
+            query=query,
+            scope=memory_scope,
+            item_types=memory_types,
+            tags=tags,
+            limit=limit
+        )
+
+    async def get_item_context(
+        self,
+        item_id: str,
+        depth: int = 3,
+        include_siblings: bool = False
+    ):
+        """
+        Get contextual items related to a specific item.
+        Useful for understanding the context around a piece of information.
+        """
+        return await self.memory_manager.get_context(
+            item_id=item_id,
+            depth=depth,
+            include_siblings=include_siblings
+        )
+
+    async def optimize_memory_context(
+        self,
+        item_ids: List[str],
+        max_tokens: int
+    ):
+        """
+        Optimize a list of memory items to fit within token limits.
+        Useful for preparing context for LLM interactions.
+        """
+        # Retrieve items by IDs
+        items = []
+        for item_id in item_ids:
+            item = await self.memory_store.retrieve(item_id)
+            if item:
+                items.append(item)
+        
+        return await self.memory_manager.optimize_context(
+            items=items,
+            max_tokens=max_tokens
+        )
+
 # Example usage demonstrating the system's capabilities
 async def main():
     logger.info("Starting MemorgSystem application")
@@ -311,6 +425,28 @@ async def main():
         # Demonstrate memory usage tracking
         memory_usage = await system.get_memory_usage()
         logger.info("Memory usage: %s", memory_usage)
+        
+        # Demonstrate new generic memory capabilities
+        logger.info("Demonstrating new generic memory capabilities")
+        
+        # Create a custom memory item
+        document_item = await system.create_memory_item(
+            content="This is a research document about AI advancements.",
+            item_type="document",
+            parent_id=topic.id,
+            metadata={"author": "Research Team", "category": "AI"},
+            tags=["research", "AI", "document"]
+        )
+        logger.info("Created document item: %s", document_item.id)
+        
+        # Search using the new memory system
+        memory_results = await system.search_memory(
+            query="AI research",
+            item_types=["document"],
+            tags=["research"],
+            limit=5
+        )
+        logger.info("Memory search results count: %d", len(memory_results))
         
         logger.info("Application completed successfully")
     except Exception as e:

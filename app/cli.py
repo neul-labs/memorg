@@ -88,6 +88,12 @@ class MemorgCLI:
                 elif user_input.lower() == 'search':
                     await self.handle_search()
                     continue
+                elif user_input.lower() == 'memsearch':
+                    await self.handle_memory_search()
+                    continue
+                elif user_input.lower() == 'addnote':
+                    await self.handle_add_note()
+                    continue
                 elif user_input.lower() == 'memory':
                     await self.show_memory_usage()
                     continue
@@ -229,6 +235,58 @@ class MemorgCLI:
 
         self.console.print(table)
 
+    async def handle_memory_search(self):
+        """Handle memory search command (searches all memory, not just conversations)."""
+        query = Prompt.ask("Enter memory search query")
+        results = await self.system.search_memory(query)
+        
+        if not results:
+            self.console.print("[yellow]No results found[/yellow]")
+            return
+
+        table = Table(title="Memory Search Results")
+        table.add_column("Score", justify="right")
+        table.add_column("Type")
+        table.add_column("Content")
+        table.add_column("Tags")
+
+        for result in results:
+            content = getattr(result.item, "content", "")
+            item_type = getattr(result.item, "type", "unknown")
+            tags = getattr(result.item, "tags", [])
+            
+            # Format tags as a comma-separated string
+            tags_str = ", ".join(tags) if tags else "None"
+
+            table.add_row(
+                f"{result.score:.2f}",
+                str(item_type),
+                content[:100] + "..." if len(content) > 100 else content,
+                tags_str
+            )
+
+        self.console.print(table)
+
+    async def handle_add_note(self):
+        """Handle adding a custom note to memory."""
+        content = Prompt.ask("Enter note content")
+        tags_input = Prompt.ask("Enter tags (comma-separated, optional)", default="")
+        tags = [tag.strip() for tag in tags_input.split(",") if tag.strip()]
+        
+        # Ensure we have a session
+        if not self.current_session:
+            await self.initialize_session()
+            
+        # Create a note using the new memory system
+        note_item = await self.system.create_memory_item(
+            content=content,
+            item_type="note",
+            parent_id=self.current_session,
+            tags=tags
+        )
+        
+        self.console.print(f"[green]Added note with ID: {note_item.id}[/green]")
+
     async def show_memory_usage(self):
         """Show current memory usage."""
         usage = await self.system.get_memory_usage()
@@ -259,6 +317,8 @@ class MemorgCLI:
         - new: Start a new conversation
         - search: Search through conversation history
         - memory: Show memory usage statistics
+        - memsearch: Search through all memory (not just conversations)
+        - addnote: Add a custom note to memory
         - exit: Exit the chat
         """
         self.console.print(Panel.fit(help_text, title="Help"))

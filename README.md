@@ -17,6 +17,8 @@ Think of Memorg as a "smart memory manager" for LLMs - it decides what informati
 
 Memorg is a sophisticated context management system designed to enhance the capabilities of Large Language Models (LLMs) by providing efficient context management, retrieval, and optimization. It serves as an external memory layer that helps LLMs maintain context over extended interactions, manage information hierarchically, and optimize token usage for better performance.
 
+Originally designed for chat-based interactions, Memorg has evolved to support a wide range of workflows beyond conversation, including document analysis, research, content creation, and more.
+
 Memorg can be used both as a **Python library** for integration into your applications and as a **command-line interface (CLI)** for standalone use.
 
 ## Features
@@ -26,6 +28,8 @@ Memorg can be used both as a **Python library** for integration into your applic
 - **Efficient Retrieval**: Combines keyword, semantic, and temporal search capabilities
 - **Context Window Optimization**: Manages token usage and creates optimized prompts
 - **Working Memory Management**: Efficiently allocates and manages token budgets
+- **Generic Memory Abstraction**: Use memory management capabilities across different workflows, not just chat
+- **Flexible Tagging System**: Organize and search memory items using custom tags
 - **Dual Interface**: Available as both a Python library and a standalone CLI
 
 ## Architecture Overview
@@ -50,6 +54,12 @@ Memorg follows a modular architecture designed for extensibility and efficiency:
 ┌─────────────────┐    ┌──────────────────┐    ┌────────────────────┐
 │ Context Manager │    │ Retrieval System │    │ Window Optimizer   │
 └─────────────────┘    └──────────────────┘    └────────────────────┘
+                              │
+                              ▼
+                   ┌──────────────────┐
+                   │ Memory Abstraction│
+                   └──────────────────┘
+
 ```
 
 - **Context Store**: Manages the hierarchical data structure (Session → Conversation → Topic → Exchange)
@@ -57,6 +67,7 @@ Memorg follows a modular architecture designed for extensibility and efficiency:
 - **Context Manager**: Handles prioritization, compression, and working memory allocation
 - **Retrieval System**: Provides intelligent search capabilities across different dimensions
 - **Window Optimizer**: Ensures efficient token usage and prompt construction
+- **Memory Abstraction**: Generic interface for using memory capabilities across different workflows
 
 ## Installation
 
@@ -200,6 +211,36 @@ async def setup_memorg():
     # Monitor memory usage
     memory_usage = await system.get_memory_usage()
     return system, session, conversation, topic
+
+# Generic Memory Usage (for non-chat workflows)
+async def document_analysis_workflow():
+    # Initialize the same way as above
+    storage = SQLiteStorageAdapter("memorg.db")
+    vector_store = USearchVectorStore("memorg.db")
+    openai_client = AsyncOpenAI()
+    system = MemorgSystem(storage, vector_store, openai_client)
+    
+    # Create a session for document analysis
+    session = await system.create_session("analyst_123", {"workflow": "document_analysis"})
+    
+    # Create custom memory items for documents
+    document_item = await system.create_memory_item(
+        content="This is a research document about AI advancements.",
+        item_type="document",  # Can be any type, not just conversation-related
+        parent_id=session.id,
+        metadata={"author": "Research Team", "category": "AI"},
+        tags=["research", "AI", "document"]
+    )
+    
+    # Search across all memory, not just conversations
+    results = await system.search_memory(
+        query="AI research",
+        item_types=["document"],  # Filter by type
+        tags=["research"],        # Filter by tags
+        limit=5
+    )
+    
+    return results
 ```
 
 ## CLI Usage
@@ -215,6 +256,8 @@ Available commands in the CLI:
 - `help`: Show available commands
 - `new`: Start a new conversation
 - `search`: Search through conversation history
+- `memsearch`: Search through all memory (documents, notes, etc.)
+- `addnote`: Add a custom note to memory with tags
 - `memory`: Show memory usage statistics
 - `exit`: Exit the chat
 
@@ -229,6 +272,8 @@ Available Commands:
 - help: Show this help message
 - new: Start a new conversation
 - search: Search through conversation history
+- memsearch: Search through all memory (documents, notes, etc.)
+- addnote: Add a custom note to memory with tags
 - memory: Show memory usage statistics
 - exit: Exit the chat
 
@@ -245,6 +290,16 @@ Enter search query: key features
 Score  Type        Content
 0.92   SEMANTIC    The system provides hierarchical storage...
 0.85   KEYWORD     Intelligent context management and...
+
+You: addnote
+Enter note content: Remember to review the quarterly reports
+Enter tags (comma-separated, optional): reports,quarterly,review
+Added note with ID: 123e4567-e89b-12d3-a456-426614174000
+
+You: memsearch
+Enter memory search query: quarterly reports
+Score  Type        Content                          Tags
+0.95   note        Remember to review the...        reports,quarterly,review
 ```
 
 ## Components
@@ -256,6 +311,22 @@ The Context Store manages the hierarchical storage of context data:
 - Conversations: Groups of related exchanges
 - Topics: Specific subjects within conversations
 - Exchanges: Individual message pairs
+
+### Memory Abstraction
+
+The Memory Abstraction provides a generic interface for using memory capabilities across different workflows:
+- **Memory Items**: Generic representation of any stored information
+- **Memory Store**: Interface for storing and retrieving memory items
+- **Memory Manager**: High-level interface for memory operations
+- **Flexible Types**: Support for custom item types beyond conversation elements
+- **Tagging System**: Organize and filter memory items using tags
+
+### Context Manager
+
+The Context Manager handles:
+- Prioritization of information based on recency and importance
+- Compression of content while preserving key information
+- Working memory allocation and management
 
 ### Context Manager
 
