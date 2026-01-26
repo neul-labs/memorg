@@ -2,13 +2,13 @@ import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock
 from datetime import datetime, timedelta, timezone
-from app.context_manager import (
+from memorg.context_manager import (
     CompressedEntity, AllocationResult, MemoryUsage,
     RecencyWeightedStrategy, TopicCoherenceStrategy,
     ExtractiveSummarization, WorkingMemory,
     ContextManager
 )
-from app.models import Exchange, Message, ParsedContent, Entity, EntityType, Topic
+from memorg.models import Exchange, Message, ParsedContent, Entity, EntityType, Topic
 
 class TestRecencyWeightedStrategy:
     """Test the RecencyWeightedStrategy implementation."""

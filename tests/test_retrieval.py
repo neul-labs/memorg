@@ -2,13 +2,13 @@ import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock
 from datetime import datetime
-from app.retrieval import (
+from memorg.retrieval import (
     ProcessedQuery,
     SimpleQueryProcessor,
     MultiFactorScorer,
     RetrievalSystem
 )
-from app.models import Exchange, Message, ParsedContent, Entity, EntityType, MatchType
+from memorg.models import Exchange, Message, ParsedContent, Entity, EntityType, MatchType
 
 class TestSimpleQueryProcessor:
     """Test the SimpleQueryProcessor implementation."""

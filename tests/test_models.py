@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timezone
-from app.models import (
-    EntityType, SearchScope, MatchType, Entity, ParsedContent, 
+from memorg.models import (
+    EntityType, SearchScope, MatchType, Entity, ParsedContent,
     Message, Exchange, Topic, Conversation, Session, SearchResult
 )
 

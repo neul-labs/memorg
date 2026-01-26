@@ -2,11 +2,7 @@
 Example demonstrating the new memory abstraction capabilities in Memorg.
 """
 
-import sys
-import os
-sys.path.insert(0, os.path.abspath('.'))
-
-from app.memory.core import MemoryItem, MemoryType, MemoryScope
+from memorg.memory.core import MemoryItem, MemoryType, MemoryScope
 from datetime import datetime
 
 def demonstrate_memory_types():

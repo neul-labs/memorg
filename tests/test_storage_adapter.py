@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, AsyncMock
 import asyncio
-from app.storage.storage_adapter import StorageAdapter
+from memorg.storage.storage_adapter import StorageAdapter
 
 class TestStorageAdapter:
     """Test the StorageAdapter protocol."""

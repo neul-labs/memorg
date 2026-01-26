@@ -11,10 +11,7 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Add the project root to the path
-sys.path.insert(0, '.')
-
-from app.mcp.server import MemorgMCP
+from memorg.mcp.server import MemorgMCP
 
 def main():
     \"\"\"Main entry point for the Memorg MCP server CLI.\"\"\"

@@ -4,8 +4,8 @@ import os
 import tempfile
 from unittest.mock import Mock, AsyncMock
 import numpy as np
-from app.vector_store.vector_store import VectorStore
-from app.vector_store.usearch_vector_store import USearchVectorStore
+from memorg.vector_store.vector_store import VectorStore
+from memorg.vector_store.usearch_vector_store import USearchVectorStore
 
 class TestVectorStore:
     """Test the VectorStore protocol."""

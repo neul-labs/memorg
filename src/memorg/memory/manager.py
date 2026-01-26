@@ -3,11 +3,11 @@ from datetime import datetime
 import uuid
 from openai import AsyncOpenAI
 
-from app.memory.core import MemoryItem, MemoryType, MemoryScope, SearchResult, MemoryManager
-from app.memory.store import HierarchicalMemoryStore
-from app.context_manager import ContextManager, RecencyWeightedStrategy, ExtractiveSummarization, WorkingMemory
-from app.retrieval import RetrievalSystem, SimpleQueryProcessor, MultiFactorScorer
-from app.window_optimizer import ContextWindowOptimizer, ProgressiveSummarization, TokenOptimizer
+from memorg.memory.core import MemoryItem, MemoryType, MemoryScope, SearchResult, MemoryManager
+from memorg.memory.store import HierarchicalMemoryStore
+from memorg.context_manager import ContextManager, RecencyWeightedStrategy, ExtractiveSummarization, WorkingMemory
+from memorg.retrieval import RetrievalSystem, SimpleQueryProcessor, MultiFactorScorer
+from memorg.window_optimizer import ContextWindowOptimizer, ProgressiveSummarization, TokenOptimizer
 
 class GenericMemoryManager(MemoryManager):
     """Generic memory manager that provides high-level memory operations."""

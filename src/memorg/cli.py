@@ -11,10 +11,10 @@ from rich.table import Table
 import json
 import logging
 
-from app.main import MemorgSystem
-from app.models import SearchScope
-from app.storage.sqlite_storage import SQLiteStorageAdapter
-from app.vector_store.usearch_vector_store import USearchVectorStore
+from memorg.main import MemorgSystem
+from memorg.models import SearchScope
+from memorg.storage.sqlite_storage import SQLiteStorageAdapter
+from memorg.vector_store.usearch_vector_store import USearchVectorStore
 
 from dotenv import load_dotenv
 load_dotenv()

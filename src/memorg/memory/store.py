@@ -4,10 +4,10 @@ import uuid
 import json
 from openai import AsyncOpenAI
 
-from app.memory.core import MemoryItem, MemoryType, MemoryScope, SearchResult, MemoryQuery, MemoryStore
-from app.storage.storage_adapter import StorageAdapter
-from app.vector_store.vector_store import VectorStore
-from app.models import Session, Conversation, Topic, Exchange, Message, ParsedContent, Entity, EntityType
+from memorg.memory.core import MemoryItem, MemoryType, MemoryScope, SearchResult, MemoryQuery, MemoryStore
+from memorg.storage.storage_adapter import StorageAdapter
+from memorg.vector_store.vector_store import VectorStore
+from memorg.models import Session, Conversation, Topic, Exchange, Message, ParsedContent, Entity, EntityType
 
 class HierarchicalMemoryStore(MemoryStore):
     """Implementation of MemoryStore using the existing hierarchical storage system."""

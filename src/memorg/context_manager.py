@@ -5,7 +5,7 @@ import math
 from openai import AsyncOpenAI
 import tiktoken
 import logging
-from app.models import Exchange, Topic, Conversation, Entity
+from memorg.models import Exchange, Topic, Conversation, Entity
 import json
 
 # Configure logger

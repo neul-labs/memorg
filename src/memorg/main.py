@@ -4,30 +4,30 @@ import logging
 from datetime import datetime
 from openai import AsyncOpenAI
 
-from app.models import (
+from memorg.models import (
     Session, Conversation, Topic, Exchange,
     Entity, EntityType, SearchScope, SearchResult
 )
-from app.context_store import ContextStore, StorageAdapter, VectorStore
-from app.context_manager import (
+from memorg.context_store import ContextStore, StorageAdapter, VectorStore
+from memorg.context_manager import (
     ContextManager, RecencyWeightedStrategy,
     ExtractiveSummarization, WorkingMemory
 )
-from app.retrieval import (
+from memorg.retrieval import (
     RetrievalSystem, SimpleQueryProcessor,
     MultiFactorScorer
 )
-from app.window_optimizer import (
+from memorg.window_optimizer import (
     ContextWindowOptimizer, ProgressiveSummarization,
     TokenOptimizer
 )
-from app.storage.sqlite_storage import SQLiteStorageAdapter
-from app.vector_store.usearch_vector_store import USearchVectorStore
+from memorg.storage.sqlite_storage import SQLiteStorageAdapter
+from memorg.vector_store.usearch_vector_store import USearchVectorStore
 
 # Import new memory components
-from app.memory.core import MemoryType, MemoryScope
-from app.memory.store import HierarchicalMemoryStore
-from app.memory.manager import GenericMemoryManager
+from memorg.memory.core import MemoryType, MemoryScope
+from memorg.memory.store import HierarchicalMemoryStore
+from memorg.memory.manager import GenericMemoryManager
 
 # Configure logging
 logging.basicConfig(

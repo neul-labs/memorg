@@ -9,11 +9,11 @@ import asyncio
 from datetime import datetime
 from openai import AsyncOpenAI
 
-from app.memory.core import MemoryType, MemoryScope
-from app.memory.store import HierarchicalMemoryStore
-from app.memory.manager import GenericMemoryManager
-from app.storage.sqlite_storage import SQLiteStorageAdapter
-from app.vector_store.usearch_vector_store import USearchVectorStore
+from memorg.memory.core import MemoryType, MemoryScope
+from memorg.memory.store import HierarchicalMemoryStore
+from memorg.memory.manager import GenericMemoryManager
+from memorg.storage.sqlite_storage import SQLiteStorageAdapter
+from memorg.vector_store.usearch_vector_store import USearchVectorStore
 
 async def document_analysis_workflow():
     """Example workflow for analyzing documents using the memory system."""

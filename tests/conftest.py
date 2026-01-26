@@ -1,11 +1,6 @@
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock
-import sys
-import os
-
-# Add the app directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 @pytest.fixture
 def event_loop():

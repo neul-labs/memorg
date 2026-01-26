@@ -4,10 +4,10 @@ from unittest.mock import Mock, AsyncMock
 from datetime import datetime
 import tempfile
 import os
-from app.main import MemorgSystem
-from app.models import Session, Conversation, Topic, Exchange, SearchScope
-from app.storage.sqlite_storage import SQLiteStorageAdapter
-from app.vector_store.usearch_vector_store import USearchVectorStore
+from memorg.main import MemorgSystem
+from memorg.models import Session, Conversation, Topic, Exchange, SearchScope
+from memorg.storage.sqlite_storage import SQLiteStorageAdapter
+from memorg.vector_store.usearch_vector_store import USearchVectorStore
 
 class TestMemorgSystem:
     """Test the MemorgSystem implementation."""

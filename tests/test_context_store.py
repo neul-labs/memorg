@@ -4,10 +4,10 @@ from unittest.mock import Mock, AsyncMock
 from datetime import datetime
 import tempfile
 import os
-from app.context_store import ContextStore
-from app.models import Session, Conversation, Topic, Exchange, Message, ParsedContent, Entity, EntityType, SearchScope, SearchResult
-from app.storage.sqlite_storage import SQLiteStorageAdapter
-from app.vector_store.usearch_vector_store import USearchVectorStore
+from memorg.context_store import ContextStore
+from memorg.models import Session, Conversation, Topic, Exchange, Message, ParsedContent, Entity, EntityType, SearchScope, SearchResult
+from memorg.storage.sqlite_storage import SQLiteStorageAdapter
+from memorg.vector_store.usearch_vector_store import USearchVectorStore
 
 class TestContextStore:
     """Test the ContextStore implementation."""

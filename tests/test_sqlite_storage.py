@@ -3,8 +3,8 @@ import asyncio
 import os
 import tempfile
 from unittest.mock import Mock, AsyncMock
-from app.storage.sqlite_storage import SQLiteStorageAdapter
-from app.models import Session, Conversation, Topic, Exchange, Entity, SearchResult, Message, ParsedContent
+from memorg.storage.sqlite_storage import SQLiteStorageAdapter
+from memorg.models import Session, Conversation, Topic, Exchange, Entity, SearchResult, Message, ParsedContent
 from datetime import datetime
 
 class TestSQLiteStorage:

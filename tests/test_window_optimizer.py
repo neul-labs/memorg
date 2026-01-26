@@ -1,12 +1,12 @@
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock
-from app.window_optimizer import (
+from memorg.window_optimizer import (
     SummarizedContent, OptimizedContext,
     ProgressiveSummarization, TokenOptimizer,
     ContextWindowOptimizer
 )
-from app.models import Entity, EntityType
+from memorg.models import Entity, EntityType
 
 class TestProgressiveSummarization:
     """Test the ProgressiveSummarization implementation."""
