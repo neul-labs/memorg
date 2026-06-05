@@ -1,20 +1,18 @@
 # Architecture
 
-Understanding Memorg's architecture and design.
+Memorg is built around a small, modular core. This section explains how the pieces fit together so you can extend or replace parts of the system with confidence.
 
-## Overview
+## Map of This Section
 
-Memorg is built on a modular architecture designed for extensibility and efficiency. This section covers:
-
-- [Architecture Overview](overview.md) - High-level system design
-- [Technical Specification](technical-spec.md) - Detailed implementation
-- [Memory Abstraction](memory-abstraction.md) - Generic memory layer
+- [Architecture Overview](overview.md) — components, responsibilities, and key classes
+- [Technical Specification](technical-spec.md) — protocols, storage schema, and implementation notes
+- [Memory Abstraction](memory-abstraction.md) — the generic memory layer that sits alongside chat history
 
 ## Core Principles
 
 ### Hierarchical Organization
 
-Information is organized in a clear hierarchy:
+Chat data is organised in a strict tree:
 
 ```
 Session
@@ -23,38 +21,45 @@ Session
         └── Exchange
 ```
 
+Each level has a UUID, timestamps, optional embedding, and a metadata dict. Children are not embedded directly in the parent's row — they live in their own table linked by id.
+
 ### Separation of Concerns
 
-Each component has a single responsibility:
+Each cooperating component has one job:
 
-- **Context Store** - Data persistence and retrieval
-- **Context Manager** - Prioritization and compression
-- **Retrieval System** - Search and ranking
-- **Window Optimizer** - Token management
+- **Context Store** — data persistence and retrieval
+- **Context Manager** — prioritization (`RecencyWeightedStrategy`) and compression (`ExtractiveSummarization`)
+- **Retrieval System** — query processing (`SimpleQueryProcessor`) and ranking (`MultiFactorScorer`)
+- **Window Optimizer** — progressive summarization and `tiktoken`-based token budgeting
 
-### Extensibility
+### Extensibility via Protocols
 
-The system is designed to be extended:
+Most components are typed as `Protocol`s:
 
-- Custom storage adapters
-- Custom prioritization strategies
-- Custom compression algorithms
-- Custom search processors
+- `StorageAdapter`, `VectorStore` — backends
+- `PrioritizationStrategy`, `CompressionStrategy` — context manager strategies
+- `QueryProcessor`, `RelevanceScorer` — retrieval strategies
+- `SummarizationStrategy` — window optimizer strategy
+
+Swap any of them by passing a custom implementation when constructing the relevant component (or your own `MemorgSystem` subclass).
+
+### Async-First
+
+All I/O is `async`. SQLite I/O uses `aiosqlite`, OpenAI calls use `AsyncOpenAI`. The vector index (USearch) is synchronous but cheap enough that it is called directly from async code.
 
 ## Component Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      MemorgSystem                           │
+│                       MemorgSystem                          │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   Context   │  │  Retrieval  │  │  Context Window     │ │
-│  │   Manager   │  │   System    │  │     Optimizer       │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │  Context    │  │ Retrieval   │  │   Context Window    │  │
+│  │  Manager    │  │  System     │  │     Optimizer       │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 │         │                │                    │             │
 │         └────────────────┼────────────────────┘             │
-│                          │                                  │
 │                          ▼                                  │
 │                  ┌─────────────┐                            │
 │                  │   Context   │                            │
@@ -62,21 +67,28 @@ The system is designed to be extended:
 │                  └─────────────┘                            │
 │                          │                                  │
 │           ┌──────────────┴──────────────┐                   │
-│           │                             │                   │
 │           ▼                             ▼                   │
 │   ┌─────────────┐               ┌─────────────┐             │
 │   │   SQLite    │               │   USearch   │             │
-│   │   Storage   │               │   Vector    │             │
+│   │  (+ FTS5)   │               │   index     │             │
 │   └─────────────┘               └─────────────┘             │
 │                                                             │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │ Memory abstraction:                                  │   │
+│  │   HierarchicalMemoryStore + GenericMemoryManager     │   │
+│  │   (reuses StorageAdapter and VectorStore)            │   │
+│  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Data Flow
 
-1. User input received
-2. Context Store persists the exchange
-3. Vector embeddings generated and stored
-4. Context Manager updates importance scores
-5. On retrieval, Retrieval System searches both stores
-6. Window Optimizer prepares context for LLM
+A typical write/read cycle:
+
+1. Caller invokes `MemorgSystem.add_exchange(topic_id, user_msg, system_msg)`.
+2. `ContextStore` writes the exchange to SQLite, generates embeddings via OpenAI, and adds them to USearch.
+3. `ContextManager.update_importance` scores the exchange against the current topic.
+4. Later, `MemorgSystem.search_context(query)` embeds the query, runs USearch nearest-neighbour, falls back to FTS5 keyword search if needed, and the `RetrievalSystem` ranks the merged set.
+5. Before calling the LLM, the caller passes the assembled content through `MemorgSystem.optimize_context` to fit the model's window.
+
+See [Technical Specification](technical-spec.md) for the underlying protocols and storage schema.

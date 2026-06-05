@@ -1,90 +1,99 @@
 # Memorg: Hierarchical Context Management System
 
-Memorg is a sophisticated context management system designed to enhance the capabilities of Large Language Models (LLMs) by providing efficient context management, retrieval, and optimization.
+Memorg is an external memory layer for Large Language Models. It stores, organizes, and retrieves context so an assistant can sustain longer, more coherent interactions than a raw context window allows.
+
+It ships as a Python library, an interactive CLI (`memorg`), and a Model Context Protocol server (`memorg-mcp`).
 
 ## Why Memorg?
 
 Large Language Models face fundamental limitations in managing context over extended conversations or complex workflows:
 
-- **Context Window Limits**: Most LLMs have finite context windows that fill up quickly
-- **Information Loss**: Important details from earlier conversations can be forgotten
-- **Irrelevant Information**: Without intelligent filtering, LLMs process all context equally
-- **Memory Fragmentation**: Related information gets scattered without proper organization
+- **Context Window Limits** — model context windows are finite and fill up quickly
+- **Information Loss** — important details from earlier turns get displaced or forgotten
+- **Undifferentiated Context** — without filtering, every prior token is treated as equally relevant
+- **Memory Fragmentation** — related information ends up scattered across turns without explicit structure
 
-Memorg addresses these challenges by acting as a "smart memory manager" for LLMs - deciding what information is important, how to organize it, and how to present it optimally to the model.
+Memorg addresses these by deciding what is worth keeping, how to group it, and how to surface it back to the model on demand.
 
 ## Key Features
 
-- **Hierarchical Context Storage** - Organizes information in Session > Conversation > Topic > Exchange hierarchy
-- **Intelligent Context Management** - Prioritizes and compresses information based on relevance
-- **Efficient Retrieval** - Combines keyword, semantic, and temporal search capabilities
-- **Context Window Optimization** - Manages token usage and creates optimized prompts
-- **Generic Memory Abstraction** - Use memory capabilities across different workflows
-- **Flexible Tagging System** - Organize and search memory items using custom tags
-- **Dual Interface** - Available as both Python library and CLI
+- **Hierarchical context** — Session > Conversation > Topic > Exchange, persisted in SQLite
+- **Generic memory items** — store documents, notes, entities, or custom types alongside chat history
+- **Hybrid retrieval** — combines USearch vector search (OpenAI embeddings) with SQLite FTS5 keyword search
+- **Importance scoring** — exchanges are scored against current topic context
+- **Window optimization** — progressive summarization plus `tiktoken`-based token budgeting
+- **Tag-based search** — filter memory items by `tags` and `item_types`
+- **Dual interface** — Python library or interactive CLI; MCP server for Claude Desktop and other MCP clients
 
 ## Quick Links
 
-- [Installation Guide](getting-started/installation.md)
-- [Quick Start Tutorial](getting-started/quickstart.md)
-- [CLI Reference](reference/cli.md)
+- [Installation](getting-started/installation.md)
+- [Quick Start](getting-started/quickstart.md)
+- [CLI Guide](guides/cli-guide.md)
+- [Library Usage](guides/library-usage.md)
+- [MCP Server](guides/mcp-server.md)
 - [Architecture Overview](architecture/overview.md)
 
-## Use Cases
+## At a Glance
 
-### Long Conversations
-Maintain context across extended dialogues without losing important details.
+```python
+from memorg import MemorgSystem
+from memorg.storage.sqlite_storage import SQLiteStorageAdapter
+from memorg.vector_store.usearch_vector_store import USearchVectorStore
+from openai import AsyncOpenAI
 
-### Complex Workflows
-Track multi-step processes with hierarchical organization.
+system = MemorgSystem(
+    storage=SQLiteStorageAdapter("memorg.db"),
+    vector_store=USearchVectorStore("memorg.db"),
+    openai_client=AsyncOpenAI(),
+)
 
-### Research & Analysis
-Organize findings and insights by topic and relevance.
+session = await system.create_session("user_123", {"max_tokens": 4096})
+conversation = await system.start_conversation(session.id)
+topic = await system.context_store.create_topic(conversation.id, "Project Help")
 
-### Customer Support
-Keep conversation history for personalized service.
+await system.add_exchange(
+    topic.id,
+    user_message="How do I handle authentication?",
+    system_message="You can use JWT tokens or session-based auth...",
+)
 
-### Content Creation
-Manage research and drafts in organized topics.
+results = await system.search_context("authentication")
+```
 
-## Architecture Overview
+## Architecture at a Glance
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌────────────────────┐
-│   Main System   │────│  Context Store   │────│   SQLite Storage   │
-└─────────────────┘    └──────────────────┘    └────────────────────┘
-                              │                         │
-                              ▼                         ▼
-                   ┌──────────────────┐    ┌────────────────────┐
-                   │ Vector Store     │    │   USearch Index    │
-                   └──────────────────┘    └────────────────────┘
-                              │
-                              ▼
-                   ┌──────────────────┐
-                   │ OpenAI Client    │
-                   └──────────────────┘
-
-┌─────────────────┐    ┌──────────────────┐    ┌────────────────────┐
-│ Context Manager │    │ Retrieval System │    │ Window Optimizer   │
-└─────────────────┘    └──────────────────┘    └────────────────────┘
-                              │
-                              ▼
-                   ┌──────────────────┐
-                   │ Memory Abstraction│
-                   └──────────────────┘
+│  MemorgSystem   │───▶│   ContextStore   │───▶│  SQLite (+ FTS5)   │
+└────────┬────────┘    └────────┬─────────┘    └────────────────────┘
+         │                      │
+         │                      ▼
+         │             ┌──────────────────┐    ┌────────────────────┐
+         │             │ USearchVector-   │───▶│   .usearch index   │
+         │             │     Store        │    │  (1536-dim, cos)   │
+         │             └──────────────────┘    └────────────────────┘
+         │
+         ├─▶ ContextManager (prioritize + compress)
+         ├─▶ RetrievalSystem (process + rank)
+         ├─▶ ContextWindowOptimizer (summarize + budget)
+         └─▶ Memory abstraction (HierarchicalMemoryStore + GenericMemoryManager)
 ```
 
-## Getting Started
+See [Architecture Overview](architecture/overview.md) for the component breakdown and [Technical Specification](architecture/technical-spec.md) for protocols and storage schema.
+
+## Install and Run
 
 ```bash
-# Install via pip
 pip install memorg
-
-# Set your OpenAI API key
-export OPENAI_API_KEY="your-api-key"
-
-# Run the CLI
+export OPENAI_API_KEY="sk-..."
 memorg
 ```
 
-See the [Quick Start Guide](getting-started/quickstart.md) for more details.
+Follow the [Quick Start](getting-started/quickstart.md) for a guided walkthrough.
+
+## Project
+
+- Repository: [neul-labs/memorg](https://github.com/neul-labs/memorg)
+- License: MIT
+- Python: 3.11+

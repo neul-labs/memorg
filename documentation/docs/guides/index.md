@@ -1,26 +1,33 @@
 # User Guides
 
-Comprehensive guides for using Memorg effectively.
+Memorg exposes the same underlying system through three surfaces: a Python library, an interactive CLI, and an MCP server. These guides walk through each.
 
 ## Available Guides
 
-### [CLI Guide](cli-guide.md)
-Complete guide to using the Memorg command-line interface.
+- [CLI Guide](cli-guide.md) — every interactive command in `memorg`
+- [Library Usage](library-usage.md) — sessions, conversations, topics, exchanges, and the memory abstraction
+- [MCP Server](mcp-server.md) — `memorg-mcp` for Claude Desktop and other MCP clients
+- [Usage Patterns](usage-patterns.md) — recurring scenarios and how the components cooperate to handle them
 
-### [Library Usage](library-usage.md)
-How to integrate Memorg into your Python applications.
+## Choosing the Right Surface
 
-### [MCP Server](mcp-server.md)
-Using Memorg as a Model Context Protocol (MCP) server.
+| Surface | Best for | Notes |
+|---------|----------|-------|
+| **CLI** (`memorg`) | Quick experimentation, single-user notebooks | Uses a fixed `cli_user`, writes to `memorg.db` in the working directory. |
+| **Library** | Embedding memory in your own agent or service | Async-first; pass your own `AsyncOpenAI`, storage, and vector store. |
+| **MCP server** (`memorg-mcp`) | Letting Claude Desktop or other MCP clients call Memorg as tools | Six tools exposed: `create_session`, `start_conversation`, `add_exchange`, `search_context`, `get_memory_usage`, `optimize_context`. |
+| **Memory abstraction** (library) | Non-chat workflows — documents, notes, research, knowledge bases | `create_memory_item`, `search_memory`, `get_item_context`, `optimize_memory_context`. |
 
-### [Usage Patterns](usage-patterns.md)
-Common patterns and best practices for different use cases.
+All four share the same SQLite + USearch backing files, so data written by one surface is visible to the others.
 
-## Choosing the Right Approach
+## Cross-Cutting Concepts
 
-| Use Case | Recommended Approach |
-|----------|---------------------|
-| Quick experimentation | CLI |
-| Application integration | Library |
-| Claude Desktop integration | MCP Server |
-| Custom workflows | Library with Memory Abstraction |
+Before diving into a specific guide, it helps to know:
+
+- A **session** is the top-level container; one session per user/workflow is typical.
+- A **conversation** lives inside a session and groups related interactions.
+- A **topic** lives inside a conversation and groups related exchanges.
+- An **exchange** is a single `(user_message, system_message)` pair, stored with an importance score and an embedding.
+- A **memory item** is a generic record (document, note, custom) that participates in the same hierarchy via `parent_id`.
+
+See [Architecture Overview](../architecture/overview.md) for how the components interact.

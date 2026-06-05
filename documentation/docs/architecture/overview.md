@@ -1,169 +1,174 @@
 # Architecture Overview
 
-This document provides a high-level overview of Memorg's architecture.
+This page introduces Memorg's components and how they cooperate inside `MemorgSystem`.
 
 ## System Components
 
-Memorg consists of five main components:
+Memorg has five logical components. The first four are the original "context management" pipeline; the fifth is the generic memory layer that sits alongside it.
 
 ### 1. Context Store
 
-Manages the hierarchical data structure and persistence.
+`memorg.context_store.ContextStore`
 
-**Responsibilities:**
+Manages the chat hierarchy and its persistence.
 
-- Create and manage sessions, conversations, topics, exchanges
-- Persist data to SQLite
-- Generate and store vector embeddings
-- Provide basic retrieval operations
+- Creates and retrieves `Session`, `Conversation`, `Topic`, `Exchange`
+- Persists data via a `StorageAdapter`
+- Generates and stores embeddings via a `VectorStore`
+- Provides basic listing/retrieval operations
 
-**Key Classes:**
+**Related classes**
 
-- `ContextStore` - Main store class
-- `SQLiteStorageAdapter` - SQLite persistence
-- `USearchVectorStore` - Vector similarity search
+- `memorg.storage.sqlite_storage.SQLiteStorageAdapter` (default storage)
+- `memorg.vector_store.usearch_vector_store.USearchVectorStore` (default vectors)
+- `memorg.storage.storage_adapter.StorageAdapter` (protocol)
+- `memorg.vector_store.vector_store.VectorStore` (protocol)
 
 ### 2. Context Manager
 
-Handles prioritization, compression, and working memory.
+`memorg.context_manager.ContextManager`
 
-**Responsibilities:**
+Handles prioritisation, compression, and working memory.
 
-- Prioritize information based on recency and importance
-- Compress content while preserving key information
-- Manage working memory allocation
+- Prioritise information by recency (`RecencyWeightedStrategy`)
+- Compress content while preserving key information (`ExtractiveSummarization`)
+- Manage a token-budgeted working-memory buffer (`WorkingMemory(capacity=4096)`)
 
-**Key Classes:**
-
-- `ContextManager` - Main manager class
-- `RecencyWeightedStrategy` - Prioritization strategy
-- `ExtractiveSummarization` - Compression strategy
-- `WorkingMemory` - Memory allocation
+In `MemorgSystem`, the working memory defaults to a 4096-token capacity.
 
 ### 3. Retrieval System
 
-Provides intelligent search capabilities.
+`memorg.retrieval.RetrievalSystem`
 
-**Responsibilities:**
+Provides intelligent search.
 
-- Process search queries
-- Perform semantic and keyword search
-- Rank results by relevance
-
-**Key Classes:**
-
-- `RetrievalSystem` - Main retrieval class
-- `SimpleQueryProcessor` - Query processing
-- `MultiFactorScorer` - Relevance scoring
+- `SimpleQueryProcessor` — turns the user query into an embedding plus parsed metadata
+- `MultiFactorScorer` — ranks candidate items combining multiple signals
+- Result match types: `KEYWORD`, `SEMANTIC`, `TEMPORAL`, `HYBRID`, `IMPORTANCE`
 
 ### 4. Context Window Optimizer
 
+`memorg.window_optimizer.ContextWindowOptimizer`
+
 Manages token usage and prompt construction.
 
-**Responsibilities:**
-
-- Summarize content progressively
-- Optimize token usage
-- Create context-aware prompts
-
-**Key Classes:**
-
-- `ContextWindowOptimizer` - Main optimizer class
-- `ProgressiveSummarization` - Summarization strategy
-- `TokenOptimizer` - Token management
+- `ProgressiveSummarization` — collapses long content while keeping the head/tail intact
+- `TokenOptimizer` — uses `tiktoken` (`cl100k_base`) to fit the result under a budget
+- `create_prompt_template(optimized)` — turns the optimized payload into a template string
 
 ### 5. Memory Abstraction
 
+`memorg.memory.store.HierarchicalMemoryStore` and `memorg.memory.manager.GenericMemoryManager`
+
 Generic interface for non-chat workflows.
 
-**Responsibilities:**
+- Treat anything as a `MemoryItem` (`document`, `note`, `entity`, custom)
+- Tag-based organisation, parent/child relationships, embeddings
+- Reuses the same `StorageAdapter` and `VectorStore` as the chat hierarchy
 
-- Provide type-agnostic memory operations
-- Support custom item types
-- Enable tag-based organization
-
-**Key Classes:**
-
-- `MemoryItem` - Generic memory item
-- `HierarchicalMemoryStore` - Memory storage
-- `GenericMemoryManager` - High-level operations
+See [Memory Abstraction](memory-abstraction.md) for details.
 
 ## Data Model
 
-### Hierarchy
+### Chat Hierarchy
 
 ```
 Session (top-level container)
-├── user_id
-├── system_config
+├── id, user_id, system_config, metadata
 └── conversations[]
-    ├── title
-    ├── summary
+    ├── id, title, summary, embedding, metadata
     └── topics[]
-        ├── title
-        ├── summary
+        ├── id, title, summary, embedding, key_entities, metadata
         └── exchanges[]
-            ├── user_message
-            ├── system_message
-            └── importance_score
+            ├── id, importance_score, embedding, metadata
+            ├── user_message: Message
+            └── system_message: Message
 ```
 
-### Storage
+`Message` carries `raw_content`, a parsed `ParsedContent` (entities, intents, sentiment), and an embedding.
 
-- **SQLite**: Structured data (sessions, conversations, topics, exchanges)
-- **USearch**: Vector embeddings for semantic search
+### Storage Mapping
+
+- **SQLite** — four collections (`sessions`, `conversations`, `topics`, `exchanges`), each backed by an FTS5 virtual table mirrored via triggers.
+- **USearch** — 1536-dimensional `f32` index with cosine metric. Vector metadata (string id, raw vector, text content) lives in a `vector_metadata` table inside the same SQLite database.
 
 ## Request Flow
+
+A typical add-then-search cycle:
 
 ```
 User Input
     │
     ▼
 ┌─────────────────┐
-│   Main System   │ ← Entry point
+│  MemorgSystem   │  ← public entry point
 └────────┬────────┘
          │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-┌────────┐  ┌─────────┐
-│ Store  │  │ Search  │
-└────┬───┘  └────┬────┘
-     │           │
-     ▼           ▼
+   ┌─────┴─────┐
+   ▼           ▼
+┌────────┐ ┌─────────┐
+│ Store  │ │ Search  │
+└───┬────┘ └────┬────┘
+    │           │
+    ▼           ▼
 ┌─────────────────────┐
-│     SQLite +        │
-│     USearch         │
+│ SQLite (+ FTS5)     │
+│ USearch (.usearch)  │
 └─────────────────────┘
 ```
+
+When `search_context` is invoked:
+
+1. The query is embedded by `SimpleQueryProcessor`.
+2. USearch returns nearest neighbours (`max_results * 2` for headroom).
+3. If fewer than `max_results` items are returned, an FTS5 keyword search runs across all four collections.
+4. The merged candidate list is ranked by `MultiFactorScorer`.
 
 ## Extension Points
 
 ### Custom Storage
 
-Implement `StorageAdapter` protocol:
-
 ```python
+from memorg.storage.storage_adapter import StorageAdapter
+
 class CustomStorage(StorageAdapter):
-    async def write(self, collection, id, data): ...
-    async def read(self, collection, id): ...
-    async def query(self, collection, filter): ...
+    async def write(self, collection: str, id: str, data) -> None: ...
+    async def read(self, collection: str, id: str): ...
+    async def query(self, collection: str, filter): ...
+    async def delete(self, collection: str, id: str) -> bool: ...
+    async def get_stats(self): ...
 ```
+
+Pass an instance to `MemorgSystem(storage=...)`.
 
 ### Custom Prioritization
 
-Implement `PrioritizationStrategy` protocol:
-
 ```python
-class CustomStrategy(PrioritizationStrategy):
-    def calculate_priority(self, entity, context): ...
+class CustomPriority:
+    def calculate_priority(self, entity, context) -> float: ...
 ```
+
+Plug into `ContextManager(prioritization_strategy=CustomPriority())` and construct `MemorgSystem` to use that manager (or replace `system.context_manager` after construction).
 
 ### Custom Compression
 
-Implement `CompressionStrategy` protocol:
-
 ```python
-class CustomCompression(CompressionStrategy):
+class CustomCompression:
     async def compress(self, content, context): ...
 ```
+
+### Custom Vector Store
+
+```python
+from memorg.vector_store.vector_store import VectorStore
+
+class CustomVectorStore(VectorStore):
+    async def add_vector(self, id, vector, metadata): ...
+    async def search_nearest(self, vector, limit): ...
+    async def delete_vector(self, id) -> bool: ...
+    async def get_stats(self): ...
+```
+
+Pass an instance to `MemorgSystem(vector_store=...)`.
+
+See [Technical Specification](technical-spec.md) for the full protocol definitions and storage schema.

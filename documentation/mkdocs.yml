@@ -1,10 +1,10 @@
 site_name: Memorg Documentation
 site_description: Hierarchical Context Management System for LLMs
 site_author: Dipankar Sarkar
-site_url: https://skelf-research.github.io/memorg/
+site_url: https://memorg.docs.neullabs.com/
 
-repo_name: skelf-research/memorg
-repo_url: https://github.com/skelf-research/memorg
+repo_name: neul-labs/memorg
+repo_url: https://github.com/neul-labs/memorg
 edit_uri: edit/main/documentation/docs/
 
 theme:
@@ -89,6 +89,6 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/skelf-research/memorg
+      link: https://github.com/neul-labs/memorg
 
 copyright: Copyright &copy; 2024-2026 Dipankar Sarkar

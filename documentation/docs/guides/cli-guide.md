@@ -1,6 +1,6 @@
 # CLI Guide
 
-Complete guide to the Memorg command-line interface.
+The `memorg` command is an interactive chat shell built with `rich`. It is implemented in `memorg.cli:MemorgCLI` and uses a fixed user id (`cli_user`), the database `memorg.db` in the current working directory, and the OpenAI chat model `gpt-4o-mini`.
 
 ## Starting the CLI
 
@@ -8,135 +8,115 @@ Complete guide to the Memorg command-line interface.
 memorg
 ```
 
-You'll see the welcome message:
+You'll see the welcome panel:
 
 ```
 Welcome to Memorg CLI Chat!
 Type 'help' for available commands or start chatting.
 ```
 
-## Commands
-
-### help
-
-Display all available commands:
+The CLI requires `OPENAI_API_KEY` either in the environment or in a `.env` file in the working directory. Missing key:
 
 ```
-You: help
+Please set OPENAI_API_KEY environment variable
+```
 
+## Commands
+
+The CLI dispatches on the literal lowercased input. Anything other than a recognised command is treated as a chat message.
+
+### `help`
+
+Print the command list.
+
+```
 Available Commands:
 - help: Show this help message
 - new: Start a new conversation
 - search: Search through conversation history
-- memsearch: Search through all memory
-- addnote: Add a custom note to memory
 - memory: Show memory usage statistics
+- memsearch: Search through all memory (not just conversations)
+- addnote: Add a custom note to memory
 - exit: Exit the chat
 ```
 
-### new
+### `new`
 
-Start a new conversation within the current session:
+Calls `system.start_conversation(current_session)` and sets it as the active conversation. The next chat message will auto-create a new `General Discussion` topic inside it.
 
-```
-You: new
-Started new conversation: 123e4567-e89b-12d3-a456-426614174000
-```
+### `search`
 
-### search
+Prompts for a query, then calls `system.search_context(query)`. This runs the hybrid pipeline: embed the query, do a USearch nearest-neighbour lookup, fall back to FTS5 across `sessions/conversations/topics/exchanges`, and finally rank the merged results with `MultiFactorScorer`.
 
-Search through your conversation history:
+Output is rendered as a `rich` table with columns `Score`, `Type` (the `MatchType` value), and `Content` (truncated to 100 characters).
 
-```
-You: search
-Enter search query: context management
+### `memsearch`
 
-Score  Type        Content
-0.95   SEMANTIC    The system provides hierarchical context management...
-0.87   KEYWORD     Context management features include...
-```
+Prompts for a query, then calls `system.search_memory(query)` — the generic memory abstraction. Output includes a `Tags` column.
 
-### memsearch
+### `addnote`
 
-Search across all memory items (not just conversations):
+Prompts for note content and an optional comma-separated tag list, then calls:
 
-```
-You: memsearch
-Enter memory search query: quarterly reports
-
-Score  Type        Content                              Tags
-0.95   note        Remember to review the...            reports,quarterly,review
-0.82   document    Q3 financial summary...              finance,q3
+```python
+system.create_memory_item(
+    content=content,
+    item_type="note",
+    parent_id=current_session,
+    tags=tags,
+)
 ```
 
-### addnote
+Output: `Added note with ID: <uuid>`.
 
-Add a custom note to memory with optional tags:
+### `memory`
 
-```
-You: addnote
-Enter note content: Important meeting tomorrow at 10am
-Enter tags (comma-separated, optional): meeting,reminder
-Added note with ID: 456e7890-...
-```
+Calls `system.get_memory_usage()` and prints:
 
-### memory
+- Total Tokens (roughly `len(content) // 4` summed across all stored items)
+- Active Items
+- Compressed Items
+- Vector Count
+- Index Size (formatted as B/KB/MB/GB)
 
-View current memory usage statistics:
+### `exit`
 
-```
-You: memory
-
-Memory Usage:
-Total Tokens: 2,456
-Active Items: 45
-Compressed Items: 12
-Vector Count: 57
-Index Size: 1.23 MB
-```
-
-### exit
-
-Exit the CLI:
-
-```
-You: exit
-```
+Breaks out of the chat loop and returns to the shell.
 
 ## Interactive Chat
 
-Any input that isn't a command is treated as a chat message:
+When the input isn't a command, the CLI:
+
+1. Ensures `current_topic` is set, auto-creating a `General Discussion` topic if needed.
+2. Calls `system.search_context(user_input)` to find relevant prior context.
+3. Records the user message as an exchange.
+4. Calls OpenAI `gpt-4o-mini` with a system prompt, the optimized context (`window_optimizer.optimize_context(..., max_tokens=8000)`), and the user message.
+5. Records the AI response as an exchange.
+6. Renders the response as Markdown.
 
 ```
 You: What is the capital of France?
 
-AI: The capital of France is Paris. It's the largest city in France and serves as
-the country's political, economic, and cultural center...
+AI: The capital of France is Paris. It's the largest city in France and serves
+    as the country's political, economic, and cultural center...
 ```
 
-The CLI automatically:
+A `KeyboardInterrupt` is caught — use `exit` to actually quit.
 
-1. Searches for relevant context from previous conversations
-2. Sends the context along with your message to the AI
-3. Stores the exchange in memory for future reference
-
-## Tips and Tricks
+## Tips
 
 ### Effective Searching
 
-- Use specific keywords for better results
-- Combine `search` (conversations) and `memsearch` (all memory) as needed
-- Tags help organize and filter notes
+- Use specific phrases for better embeddings; FTS5 picks up the literal tokens too.
+- Use `search` for chat history and `memsearch` for notes and documents.
+- Tag consistently — e.g. always lowercase, hyphenated.
 
-### Managing Context
+### Managing Topics
 
-- Use `new` to start fresh topics
-- The system automatically prioritizes recent and relevant context
-- Check `memory` periodically to understand usage
+- Use `new` to start a new conversation when the subject shifts substantially.
+- A single conversation can contain many topics, but the CLI only auto-creates one (`General Discussion`); call the library directly if you need finer-grained topic control.
 
-### Organizing with Tags
-
-When using `addnote`, use consistent tags:
+### Organising with Tags
 
 ```
 You: addnote
@@ -146,11 +126,27 @@ Enter tags: project,deadline,march
 You: addnote
 Enter note content: Budget meeting rescheduled to March 20th
 Enter tags: meeting,budget,march
-```
 
-Then search by tag:
-
-```
 You: memsearch
 Enter memory search query: march
+```
+
+Both notes are returned because the `march` tag and content match.
+
+## Reading the Database from Code
+
+Anything stored by the CLI is visible to the library:
+
+```python
+from memorg import MemorgSystem
+from memorg.storage.sqlite_storage import SQLiteStorageAdapter
+from memorg.vector_store.usearch_vector_store import USearchVectorStore
+from openai import AsyncOpenAI
+
+system = MemorgSystem(
+    storage=SQLiteStorageAdapter("memorg.db"),
+    vector_store=USearchVectorStore("memorg.db"),
+    openai_client=AsyncOpenAI(),
+)
+results = await system.search_memory("march", tags=["march"])
 ```

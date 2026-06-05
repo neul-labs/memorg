@@ -1,77 +1,104 @@
 # Installation
 
-## From PyPI (Recommended)
+Memorg targets Python 3.11+ and is published to PyPI as `memorg`.
 
-Install Memorg using pip:
+## From PyPI (Recommended)
 
 ```bash
 pip install memorg
 ```
 
+This installs the library along with two console scripts:
+
+| Script | Module | Purpose |
+|--------|--------|---------|
+| `memorg` | `memorg.cli_entry:main` | Interactive chat CLI |
+| `memorg-mcp` | `memorg.mcp.cli:main` | MCP server for Claude Desktop, etc. |
+
 ## From Source (Development)
 
-For development or to get the latest changes:
+Memorg is managed with Poetry. To work on it locally:
 
 ```bash
-git clone https://github.com/skelf-research/memorg.git
+git clone https://github.com/neul-labs/memorg.git
 cd memorg
 poetry install
 ```
 
-## Verify Installation
-
-After installation, verify it works:
+Run the test suite:
 
 ```bash
-memorg --help
+poetry run pytest
 ```
 
-Or in Python:
+Tests use `pytest-asyncio` in `auto` mode and live under `tests/`.
+
+## Verify Installation
+
+CLI:
+
+```bash
+memorg
+```
+
+You should see the `Welcome to Memorg CLI Chat!` panel. Type `exit` to quit.
+
+Python:
 
 ```python
 from memorg import MemorgSystem
-print("Memorg installed successfully!")
+print(MemorgSystem)
 ```
+
+Top-level re-exports (from `memorg/__init__.py`):
+
+- `MemorgSystem`
+- `ContextStore`, `ContextManager`, `RetrievalSystem`, `ContextWindowOptimizer`
+- `Session`, `Conversation`, `Topic`, `Exchange`, `Entity`
 
 ## Dependencies
 
-Memorg automatically installs these dependencies:
+The runtime dependencies pinned in `pyproject.toml`:
 
 | Package | Purpose |
 |---------|---------|
-| `openai` | OpenAI API for embeddings and chat |
-| `rich` | Beautiful terminal output |
-| `tiktoken` | Token counting |
-| `aiosqlite` | Async SQLite storage |
-| `numpy` | Numerical operations |
-| `usearch` | Vector similarity search |
-| `python-dotenv` | Environment variable management |
-| `fastmcp` | MCP server support |
+| `openai` (^1.79) | Embeddings + chat completions |
+| `rich` (^14) | Terminal output for the CLI |
+| `tiktoken` (^0.9) | Token counting in the window optimizer |
+| `aiosqlite` (^0.21) | Async SQLite I/O |
+| `numpy` (^2.2) | Vector arithmetic |
+| `usearch` (^2.17) | On-disk vector index |
+| `python-dotenv` (^1.1) | Loads `.env` for the CLI and MCP server |
+| `fastmcp` (^0.1) | MCP server implementation |
 
 ## Optional: Documentation Dependencies
 
-To build the documentation locally:
+To build this documentation site locally:
 
 ```bash
 poetry install --with docs
+poetry run mkdocs serve -f documentation/mkdocs.yml
 ```
+
+The `docs` group pins `mkdocs ^1.5` and `mkdocs-material ^9.5`.
 
 ## Environment Setup
 
-Set your OpenAI API key:
+Memorg expects `OPENAI_API_KEY` to be available — either exported or loaded from a `.env` file in the working directory (`python-dotenv` is loaded by the CLI and the MCP server at startup).
 
 === "Linux/macOS"
     ```bash
-    export OPENAI_API_KEY="your-api-key-here"
+    export OPENAI_API_KEY="sk-..."
     ```
 
-=== "Windows"
+=== "Windows (PowerShell)"
     ```powershell
-    $env:OPENAI_API_KEY="your-api-key-here"
+    $env:OPENAI_API_KEY="sk-..."
     ```
 
-Or create a `.env` file in your project directory:
+=== ".env file"
+    ```
+    OPENAI_API_KEY=sk-...
+    ```
 
-```
-OPENAI_API_KEY=your-api-key-here
-```
+If the key is missing, the CLI prints `Please set OPENAI_API_KEY environment variable` and exits.
