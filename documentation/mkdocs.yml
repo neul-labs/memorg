@@ -1,7 +1,7 @@
 site_name: Memorg Documentation
 site_description: Hierarchical Context Management System for LLMs
 site_author: Dipankar Sarkar
-site_url: https://memorg.docs.neullabs.com/
+site_url: https://docs.neullabs.com/memorg/
 
 repo_name: neul-labs/memorg
 repo_url: https://github.com/neul-labs/memorg
